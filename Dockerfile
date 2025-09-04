@@ -1,36 +1,25 @@
-# Frontend Dockerfile
-FROM node:20-alpine AS base
+# Simple Dockerfile for Railway
+FROM node:20-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm ci
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+# Copy source code
 COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
 
 # Build the application
 RUN npm run build
 
-# Production image with nginx
-FROM nginx:alpine AS runner
-WORKDIR /usr/share/nginx/html
-
-# Copy built application
-COPY --from=builder /app/dist .
-
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
 # Expose port
-EXPOSE 80
+EXPOSE 4000
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start the application
+CMD ["npm", "start"]
